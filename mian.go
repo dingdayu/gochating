@@ -16,13 +16,14 @@ func main() {
     <title>Title</title>
 </head>
 <body>
-hello {{.}}!
+hello {{.name}}!
 </body>
 </html>
 		`
-		name := "dingdayu"
+		locals := make(map[string]interface{})
+		locals["locals"] = "dingdayu"
 		t := template.Must(template.New("templates").Parse(templates))
-		t.Execute(w, name)
+		t.Execute(w, locals)
 	})
 	// 监听端口 8080
 	err := http.ListenAndServe(":8080", nil)
