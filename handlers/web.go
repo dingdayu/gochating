@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+const TEMPLATE_DIR  = "./templates"
+
 func PublicHandler(w http.ResponseWriter, r *http.Request) {
 	// 直接调用http包提供的文件服务方法，直接根据请求路径返回文件内容
 	name := r.URL.Path[len("/"):]
@@ -40,5 +42,5 @@ func Hello(w http.ResponseWriter, r *http.Request) {
 	// 将字符串通过回写指针返回给浏览器
 	locals := make(map[string]interface{})
 	locals["name"] = "dingdayu"
-	LoadHtml(w, "./templates/index.html", nil)
+	LoadHtml(w,  TEMPLATE_DIR + "/index.html", nil)
 }
