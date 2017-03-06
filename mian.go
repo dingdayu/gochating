@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/dingdayu/gochatting/handlers"
 	"net/http"
+	"log"
+	"runtime/debug"
 )
 
 func main() {
@@ -29,6 +31,8 @@ func safeWebHandler(fn http.HandlerFunc) http.HandlerFunc {
 				// 或者输出自定义的50x错误页面
 				//w.WriteHeader(http.StatusInternalServerError)
 				//handlers.LoadHtml(w, "./templates/50x.html", nil)
+				log.Println("WARN: panic in %v. - %v", fn, e)
+				log.Println(string(debug.Stack()))
 			}
 		}()
 		// 调用传入的方法名
