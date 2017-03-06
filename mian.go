@@ -1,8 +1,8 @@
 package main
 
 import (
-	"net/http"
 	"github.com/dingdayu/gochatting/handlers"
+	"net/http"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 }
 
 // 服务器内部错误拦截
-func safeWebHandler(fn http.HandlerFunc) http.HandlerFunc  {
+func safeWebHandler(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 遇到错误时的扫尾工作
 		defer func() {
@@ -28,12 +28,7 @@ func safeWebHandler(fn http.HandlerFunc) http.HandlerFunc  {
 				http.Error(w, e.Error(), http.StatusInternalServerError)
 				// 或者输出自定义的50x错误页面
 				//w.WriteHeader(http.StatusInternalServerError)
-				//t,err := template.ParseFiles("./templates/50x.html")
-				//if err != nil {
-				//	// 抛出错误，并向上层层抛出错误
-				//	panic(err)
-				//}
-				//t.Execute(w, nil)
+				//handlers.LoadHtml(w, "./templates/50x.html", nil)
 			}
 		}()
 		// 调用传入的方法名
