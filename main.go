@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"log"
 	"runtime/debug"
+	"github.com/golang/net/websocket"
 )
 
 func main() {
@@ -12,6 +13,8 @@ func main() {
 	http.HandleFunc("/hello", safeWebHandler(handlers.Hello))
 	http.HandleFunc("/api/json", handlers.HelloJson)
 	http.HandleFunc("/public/", handlers.PublicHandler)
+	http.HandleFunc("/ws", websocket.Handler(handlers.Connection))
+
 
 	// 监听端口 8080
 	err := http.ListenAndServe(":8080", nil)
