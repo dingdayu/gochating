@@ -5,12 +5,15 @@ import (
 	"net/http"
 	"log"
 	"runtime/debug"
+	"golang.org/x/net/websocket"
 )
 
 func main() {
 	// 注册一个路由
+	http.Handle("/websocket", websocket.Handler(handlers.Connection))
+
 	http.HandleFunc("/hello", safeWebHandler(handlers.Hello))
-	http.HandleFunc("/websocket", safeWebHandler(handlers.Connection))
+
 	http.HandleFunc("/api/json", handlers.HelloJson)
 	http.HandleFunc("/public/", handlers.PublicHandler)
 
