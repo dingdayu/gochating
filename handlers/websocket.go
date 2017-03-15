@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-var ConnectingPool *ConnectingPool = &ConnectingPool{}
+var connectingPool *ConnectingPool = &ConnectingPool{}
 
 func Connection(ws *websocket.Conn) {
 	token := ws.Request().URL.Query().Get("token")
@@ -23,7 +23,7 @@ func Connection(ws *websocket.Conn) {
 		return
 	}
 	// 检查是否已链接
-	if _,ok := ConnectingPool.Users[user.UID]; ok {
+	if _,ok := connectingPool.Users[user.UID]; ok {
 		//return
 	}
 
@@ -33,7 +33,7 @@ func Connection(ws *websocket.Conn) {
 		UserInfo:   user,
 	}
 
-	ConnectingPool.Users[user.UID] = OnlineUser
+	connectingPool.Users[user.UID] = OnlineUser
 	// TODO::Hook
 	fmt.Println("新用户上线", user)
 
@@ -71,7 +71,7 @@ func (onlineUser *OnlineUser) UserOnlineNotice() {
 // 有用户退出，将新的用户列表发送给所有人
 func (this *OnlineUser) killUserResource() {
 	this.Connection.Close()
-	delete(ConnectingPool.Users, this.UserInfo.UID)
+	delete(connectingPool.Users, this.UserInfo.UID)
 	close(this.Send)
 
 	// 用户下线通知，同上面行数逻辑类似
@@ -105,7 +105,7 @@ func (this *OnlineUser) PushToCline() {
 
 // 直接发送消息给对于用户
 func Send(uid int, msg *structs.Message) {
-	if onlineUser, ok := ConnectingPool.Users[uid]; ok {
+	if onlineUser, ok := connectingPool.Users[uid]; ok {
 		err := websocket.JSON.Send(onlineUser.Connection, msg)
 		if err != nil {
 			log.Println("[ERROR] 消息推送出错！")
@@ -119,12 +119,12 @@ func Send(uid int, msg *structs.Message) {
 }
 
 func init() {
-	ConnectingPool = &ConnectingPool{
+	connectingPool = &ConnectingPool{
 		Users:     make(map[int]*OnlineUser),
 		Broadcast: make(chan structs.Message),
 		CloseSign: make(chan bool),
 	}
-	go ConnectingPool.run()
+	go connectingPool.run()
 }
 
 // 等待通知和关闭通知
@@ -143,6 +143,10 @@ func (this *ConnectingPool) run() {
 			}
 		}
 	}
+}
+
+func GetConnectingPool() *ConnectingPool  {
+	return connectingPool
 }
 
 // 上线用户的连接池

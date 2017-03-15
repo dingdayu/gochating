@@ -12,6 +12,7 @@ func main() {
 	// 注册一个路由
 	http.Handle("/websocket", websocket.Handler(handlers.Connection))
 
+	http.HandleFunc("/getOnlineUserList", handlers.GetOnlineUserList)
 	http.HandleFunc("/hello", safeWebHandler(handlers.Hello))
 
 	http.HandleFunc("/api/json", handlers.HelloJson)

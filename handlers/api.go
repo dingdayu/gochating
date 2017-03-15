@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"github.com/dingdayu/gochatting/structs"
 )
 
 func HelloJson(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +30,25 @@ func HelloJson(w http.ResponseWriter, r *http.Request) {
 	// 注意  json.Marshal() 返回的是字节 需要转 string()
 	if j, err := json.Marshal(hello); err != nil {
 		fmt.Fprint(w, "json error")
+	} else {
+		// 返回json的类型头信息
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, string(j))
+	}
+}
+
+func GetOnlineUserList(w http.ResponseWriter, r *http.Request)  {
+	// 先获取所有在线的人
+	var userList []structs.UserInfo
+
+	ConnectingPool := GetConnectingPool()
+	for _, online := range ConnectingPool.Users {
+		userList = append(userList, *online.UserInfo)
+	}
+
+	if j, err := json.Marshal(userList);  userList == nil || err != nil {
+		fmt.Fprint(w, "json error")
+		io.WriteString(w, "[]")
 	} else {
 		// 返回json的类型头信息
 		w.Header().Set("Content-Type", "application/json")
