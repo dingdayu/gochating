@@ -3,17 +3,13 @@ package handlers
 import (
 	"fmt"
 	"log"
-	"time"
 	"golang.org/x/net/websocket"
 	"github.com/dingdayu/gochatting/models"
 	"github.com/dingdayu/gochatting/structs"
+	"strconv"
 )
 
-const (
-	MSG_VERSION = 1
-)
-
-var connectingPool *ConnectingPool = &ConnectingPool{}
+var ConnectingPool *ConnectingPool = &ConnectingPool{}
 
 func Connection(ws *websocket.Conn) {
 	token := ws.Request().URL.Query().Get("token")
@@ -27,17 +23,17 @@ func Connection(ws *websocket.Conn) {
 		return
 	}
 	// 检查是否已链接
-	if _,ok := connectingPool.Users[user.UID]; ok {
+	if _,ok := ConnectingPool.Users[user.UID]; ok {
 		//return
 	}
 
 	OnlineUser := &OnlineUser{
 		Connection: ws,
-		Send:       make(chan Message, 256),
+		Send:       make(chan structs.Message, 256),
 		UserInfo:   user,
 	}
 
-	connectingPool.Users[user.UID] = OnlineUser
+	ConnectingPool.Users[user.UID] = OnlineUser
 	// TODO::Hook
 	fmt.Println("新用户上线", user)
 
@@ -58,17 +54,15 @@ func Connection(ws *websocket.Conn) {
 func (onlineUser *OnlineUser) UserOnlineNotice() {
 	// 获取所有需要通知到的用户，并通过onlineUser通知过去
 	//uid := onlineUser.UserInfo.UID;
-	if(onlineUser.UserInfo.UID == 1) {
-		m := Message{
-			Module:"PUSH",
-			Version:MSG_VERSION,
-			UUID:00,
-			UID:onlineUser.UserInfo.UID,
-			Type:"SYSTEM",
-			Target:"2",
-			Time:int(time.Now().Unix()),
+	 target := []structs.UserInfo{
+		{1,"dingdayu", "614422099@qq.com" },
+		{2,"dingxiaoyu", "1003280349@qq.com" },
+	}
+	for _, t := range target{
+		if t.UID != onlineUser.UserInfo.UID {
+			m := structs.OnlineNotice(onlineUser.UserInfo.UID, strconv.Itoa(t.UID))
+			Send(t.UID, m)
 		}
-		Send(2, m)
 	}
 
 
@@ -77,7 +71,7 @@ func (onlineUser *OnlineUser) UserOnlineNotice() {
 // 有用户退出，将新的用户列表发送给所有人
 func (this *OnlineUser) killUserResource() {
 	this.Connection.Close()
-	delete(connectingPool.Users, this.UserInfo.UID)
+	delete(ConnectingPool.Users, this.UserInfo.UID)
 	close(this.Send)
 
 	// 用户下线通知，同上面行数逻辑类似
@@ -110,8 +104,8 @@ func (this *OnlineUser) PushToCline() {
 }
 
 // 直接发送消息给对于用户
-func Send(uid int, msg Message) {
-	if onlineUser, ok := connectingPool.Users[uid]; ok {
+func Send(uid int, msg *structs.Message) {
+	if onlineUser, ok := ConnectingPool.Users[uid]; ok {
 		err := websocket.JSON.Send(onlineUser.Connection, msg)
 		if err != nil {
 			log.Println("[ERROR] 消息推送出错！")
@@ -125,12 +119,12 @@ func Send(uid int, msg Message) {
 }
 
 func init() {
-	connectingPool = &ConnectingPool{
+	ConnectingPool = &ConnectingPool{
 		Users:     make(map[int]*OnlineUser),
-		Broadcast: make(chan Message),
+		Broadcast: make(chan structs.Message),
 		CloseSign: make(chan bool),
 	}
-	go connectingPool.run()
+	go ConnectingPool.run()
 }
 
 // 等待通知和关闭通知
@@ -154,38 +148,16 @@ func (this *ConnectingPool) run() {
 // 上线用户的连接池
 type ConnectingPool struct {
 	Users     map[int]*OnlineUser
-	Broadcast chan Message
+	Broadcast chan structs.Message
 	CloseSign chan bool
 }
 
 // 上线用户结构
 type OnlineUser struct {
 	Connection *websocket.Conn
-	Send       chan Message
+	Send       chan structs.Message
 	UserInfo   *structs.UserInfo
 }
 
 
-// 消息结构
-type Message struct {
-	Module string
-	// 协议版本号
-	Version int
-	// 消息唯一id
-	UUID int
-	// 消息来源用户id
-	UID int
-	// 消息类型 GROUP PRIVATE SYSTEM
-	Type string
-	// 目标id ： ueser_id || group_id
-	Target string
-	// 消息发送时间
-	Time    int
-	Content MessageContent
-}
 
-// 消息内容结构
-type MessageContent struct {
-	Type string
-	Data string
-}

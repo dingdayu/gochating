@@ -11,6 +11,35 @@ hello {{.name}}!
 </body>
 <script type="text/javascript">
     var user = $("[name='username']").data('node');
-    alert(user);
+
+    if (window["WebSocket"]) {
+        conn = new WebSocket("ws://{{.WebSocketHost}}/websocket?token=1");
+        conn.onopen = function() {
+            console.log("connn websocket")
+        };
+
+        conn.onmessage = function(evt) {
+            var data = JSON.parse(evt.data);
+            switch(data.MType) {
+                case "text_mtype":
+                    addMessage(data.TextMessage)
+                    break;
+                case "status_mtype":
+                    updateUsers(data.UserStatus)
+                    break;
+                default:
+            }
+        };
+
+        conn.onerror = function() {
+            errorMessage("<strong> An error just occured.<strong>")
+        };
+
+        conn.onclose = function() {
+            errorMessage("<strong>Connection closed.<strong>")
+        };
+    } else {
+        errorMessage("Your browser does not support WebSockets.");
+    }
 </script>
 </html>
