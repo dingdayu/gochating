@@ -1,11 +1,12 @@
-package handlers
+package api
 
 import (
+	"net/http"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"github.com/dingdayu/gochatting/structs"
+	"github.com/dingdayu/gochatting/handlers"
 )
 
 func HelloJson(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +42,7 @@ func GetOnlineUserList(w http.ResponseWriter, r *http.Request)  {
 	// 先获取所有在线的人
 	var userList []structs.UserInfo
 
-	ConnectingPool := GetConnectingPool()
+	ConnectingPool := handlers.GetConnectingPool()
 	for _, online := range ConnectingPool.Users {
 		userList = append(userList, *online.UserInfo)
 	}

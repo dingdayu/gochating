@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Login -- GoIM</title>
+    <script src="/public/js/jquery-3.1.1.min.js"></script>
+</head>
+<body>
+<table>
+    <tr>
+        <td>用户名：</td>
+        <td><input name="username" type="text" /></td>
+    </tr>
+    <tr>
+        <td>密码：</td>
+        <td><input name="passwd" type="password" /></td>
+    </tr>
+    <tr>
+        <td>
+            <input type="button" onclick="subimt()" value="登陆"/>
+        </td>
+    </tr>
+</table>
+<script type="text/javascript">
+    function subimt() {
+        var data = {
+            username: $("[name='username']").val(),
+            passwd: $("[name='passwd']").val()
+        };
+        $.post("/api/login", data, function (ret) {
+            console.log(ret)
+        })
+    }
+</script>
+</body>
+</html>

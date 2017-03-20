@@ -1,4 +1,4 @@
-package handlers
+package web
 
 import (
 	"html/template"
@@ -7,13 +7,17 @@ import (
 	"io/ioutil"
 	"path"
 	"log"
+	"github.com/dingdayu/gochatting/drives/session"
 )
 
 const TEMPLATE_DIR  = "./templates"
 
 var templates map[string]*template.Template
 
+
 func init()  {
+	// 初始化模板变量
+	templates = make(map[string] *template.Template)
 	// 获取目录下所有文件及文件夹
 	fileInfoArr, err := ioutil.ReadDir(TEMPLATE_DIR)
 	if err != nil {
@@ -31,9 +35,9 @@ func init()  {
 		templatePath = TEMPLATE_DIR + "/" + templateName
 		log.Println("Loading template:", templatePath)
 		t := template.Must(template.ParseFiles(templatePath))
-		templates = make(map[string] *template.Template)
 		templates[templatePath] = t
 	}
+
 }
 
 func PublicHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +62,10 @@ func isExists(path string) bool {
 
 // 模板加载
 func LoadHtml(w http.ResponseWriter, path string, locals map[string]interface{}) {
+	if templates[path] == nil {
+		http.Error(w, path + " not find!", http.StatusInternalServerError)
+		return
+	}
 	err := templates[path].Execute(w, locals)
 	if err != nil {
 		// 抛出错误，并向上层层抛出错误
@@ -71,4 +79,16 @@ func Hello(w http.ResponseWriter, r *http.Request) {
 	locals["name"] = "dingdayu"
 	locals["WebSocketHost"] = "127.0.0.1:8080"
 	LoadHtml(w,  TEMPLATE_DIR + "/index.html", locals)
+}
+
+func Login(w http.ResponseWriter, r *http.Request)  {
+	sess, _ := session.GlobalSessions.SessionStart(w, r)
+	isLogin := sess.Get("isLogin")
+	if isLogin != nil && isLogin.(bool) {
+		w.Header().Set("Cache-Control","no-cache")
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	}
+
+	sess.Set("visitLogin", true)
+	LoadHtml(w,  TEMPLATE_DIR + "/login.html", nil)
 }

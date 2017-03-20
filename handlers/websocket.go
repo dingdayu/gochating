@@ -6,34 +6,50 @@ import (
 	"golang.org/x/net/websocket"
 	"github.com/dingdayu/gochatting/models"
 	"github.com/dingdayu/gochatting/structs"
-	"strconv"
+	"github.com/dingdayu/gochatting/drives/session"
 )
 
 var connectingPool *ConnectingPool = &ConnectingPool{}
 
 func Connection(ws *websocket.Conn) {
-	token := ws.Request().URL.Query().Get("token")
-
-	if token == "" {
+	gosessionid,err := ws.Request().Cookie("gosessionid")
+	if err!=nil {
+		json := make(map[string]interface{});
+		json["code"] = 300
+		json["msg"] = "need login"
+		websocket.JSON.Send(ws, json)
 		return
 	}
-	user := models.GetUserInfo(token)
+	sess, _ := session.GlobalSessions.GetSessionStore(gosessionid.Value)
 
-	if user == nil {
+	isLogin := sess.Get("isLogin")
+	id := sess.Get("id")
+	if isLogin == nil || id == nil || !isLogin.(bool) {
+		json := make(map[string]interface{});
+		json["code"] = 304
+		json["msg"] = "need login"
+		websocket.JSON.Send(ws, json)
+		return
+	}
+	fmt.Println(id.(string))
+	user, err := models.IdToUser(id.(string));
+	fmt.Println(user)
+
+	if err != nil{
 		return
 	}
 	// 检查是否已链接
-	if _,ok := connectingPool.Users[user.UID]; ok {
+	if _,ok := connectingPool.Users[string(user.ID)]; ok {
 		//return
 	}
 
 	OnlineUser := &OnlineUser{
 		Connection: ws,
 		Send:       make(chan structs.Message, 256),
-		UserInfo:   user,
+		UserInfo:   &user,
 	}
 
-	connectingPool.Users[user.UID] = OnlineUser
+	connectingPool.Users[string(user.ID)] = OnlineUser
 	// TODO::Hook
 	fmt.Println("新用户上线", user)
 
@@ -53,17 +69,17 @@ func Connection(ws *websocket.Conn) {
 // 通知相应的用户，本用户上线消息
 func (onlineUser *OnlineUser) UserOnlineNotice() {
 	// 获取所有需要通知到的用户，并通过onlineUser通知过去
-	//uid := onlineUser.UserInfo.UID;
-	 target := []structs.UserInfo{
-		{1,"dingdayu", "614422099@qq.com" },
-		{2,"dingxiaoyu", "1003280349@qq.com" },
-	}
-	for _, t := range target{
-		if t.UID != onlineUser.UserInfo.UID {
-			m := structs.OnlineNotice(onlineUser.UserInfo.UID, strconv.Itoa(t.UID))
-			Send(t.UID, m)
-		}
-	}
+	//uid := onlineUser.UserInfo.ID;
+	// target := []structs.UserInfo{
+	//	{1,"dingdayu", "614422099@qq.com", "" },
+	//	{2,"dingxiaoyu", "1003280349@qq.com", "" },
+	//}
+	//for _, t := range target{
+	//	if t.ID != onlineUser.UserInfo.ID {
+	//		m := structs.OnlineNotice(onlineUser.UserInfo.ID, strconv.Itoa(t.ID))
+	//		Send(t.ID, m)
+	//	}
+	//}
 
 
 }
@@ -71,7 +87,7 @@ func (onlineUser *OnlineUser) UserOnlineNotice() {
 // 有用户退出，将新的用户列表发送给所有人
 func (this *OnlineUser) killUserResource() {
 	this.Connection.Close()
-	delete(connectingPool.Users, this.UserInfo.UID)
+	delete(connectingPool.Users, string(this.UserInfo.ID))
 	close(this.Send)
 
 	// 用户下线通知，同上面行数逻辑类似
@@ -104,7 +120,7 @@ func (this *OnlineUser) PushToCline() {
 }
 
 // 直接发送消息给对于用户
-func Send(uid int, msg *structs.Message) {
+func Send(uid string, msg *structs.Message) {
 	if onlineUser, ok := connectingPool.Users[uid]; ok {
 		err := websocket.JSON.Send(onlineUser.Connection, msg)
 		if err != nil {
@@ -120,7 +136,7 @@ func Send(uid int, msg *structs.Message) {
 
 func init() {
 	connectingPool = &ConnectingPool{
-		Users:     make(map[int]*OnlineUser),
+		Users:     make(map[string]*OnlineUser),
 		Broadcast: make(chan structs.Message),
 		CloseSign: make(chan bool),
 	}
@@ -151,7 +167,7 @@ func GetConnectingPool() *ConnectingPool  {
 
 // 上线用户的连接池
 type ConnectingPool struct {
-	Users     map[int]*OnlineUser
+	Users     map[string]*OnlineUser
 	Broadcast chan structs.Message
 	CloseSign chan bool
 }

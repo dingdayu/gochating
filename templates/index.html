@@ -20,6 +20,9 @@ hello {{.name}}!
 
         conn.onmessage = function(evt) {
             var data = JSON.parse(evt.data);
+            if(data.code == 304) {
+                location.href = "/login"
+            }
             switch(data.MType) {
                 case "text_mtype":
                     addMessage(data.TextMessage)
