@@ -10,17 +10,15 @@ hello {{.name}}!
 <input name="username" data-node="dingdayu" />
 </body>
 <script type="text/javascript">
-    var user = $("[name='username']").data('node');
-
     if (window["WebSocket"]) {
-        conn = new WebSocket("ws://{{.WebSocketHost}}/websocket?token=1");
+        conn = new WebSocket("ws://{{.WebSocketHost}}/websocket");
         conn.onopen = function() {
             console.log("connn websocket")
         };
 
         conn.onmessage = function(evt) {
             var data = JSON.parse(evt.data);
-            if(data.code == 304) {
+            if(data.code == 401) {
                 location.href = "/login"
             }
             switch(data.MType) {
@@ -35,7 +33,7 @@ hello {{.name}}!
         };
 
         conn.onerror = function() {
-            errorMessage("<strong> An error just occured.<strong>")
+            //location.reload()
         };
 
         conn.onclose = function() {

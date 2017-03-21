@@ -28,8 +28,11 @@
             passwd: $("[name='passwd']").val()
         };
         $.post("/api/login", data, function (ret) {
+            if(ret.code == 200) {
+                location.href = '/'
+            }
             console.log(ret)
-        })
+        },'json')
     }
 </script>
 </body>

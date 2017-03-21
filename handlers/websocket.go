@@ -1,45 +1,28 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
-	"log"
-	"golang.org/x/net/websocket"
+	"github.com/dingdayu/gochatting/drives/session"
 	"github.com/dingdayu/gochatting/models"
 	"github.com/dingdayu/gochatting/structs"
-	"github.com/dingdayu/gochatting/drives/session"
+	"golang.org/x/net/websocket"
+	"log"
+	"net/http"
 )
 
 var connectingPool *ConnectingPool = &ConnectingPool{}
 
 func Connection(ws *websocket.Conn) {
-	gosessionid,err := ws.Request().Cookie("gosessionid")
-	if err!=nil {
-		json := make(map[string]interface{});
-		json["code"] = 300
-		json["msg"] = "need login"
-		websocket.JSON.Send(ws, json)
-		return
-	}
-	sess, _ := session.GlobalSessions.GetSessionStore(gosessionid.Value)
+	// 检查用户登陆，获取用户对象
+	user, err := checkLogin(ws)
 
-	isLogin := sess.Get("isLogin")
-	id := sess.Get("id")
-	if isLogin == nil || id == nil || !isLogin.(bool) {
-		json := make(map[string]interface{});
-		json["code"] = 304
-		json["msg"] = "need login"
-		websocket.JSON.Send(ws, json)
-		return
-	}
-	fmt.Println(id.(string))
-	user, err := models.IdToUser(id.(string));
-	fmt.Println(user)
-
-	if err != nil{
+	if err != nil {
+		needLogin(ws)
 		return
 	}
 	// 检查是否已链接
-	if _,ok := connectingPool.Users[string(user.ID)]; ok {
+	if _, ok := connectingPool.Users[user.ID.Hex()]; ok {
 		//return
 	}
 
@@ -49,7 +32,7 @@ func Connection(ws *websocket.Conn) {
 		UserInfo:   &user,
 	}
 
-	connectingPool.Users[string(user.ID)] = OnlineUser
+	connectingPool.Users[user.ID.Hex()] = OnlineUser
 	// TODO::Hook
 	fmt.Println("新用户上线", user)
 
@@ -80,7 +63,12 @@ func (onlineUser *OnlineUser) UserOnlineNotice() {
 	//		Send(t.ID, m)
 	//	}
 	//}
-
+	for _, t := range connectingPool.Users {
+		if t.UserInfo.ID != onlineUser.UserInfo.ID {
+			m := structs.OnlineNotice(onlineUser.UserInfo.ID.Hex(), t.UserInfo.ID.Hex())
+			Send(t.UserInfo.ID.Hex(), m)
+		}
+	}
 
 }
 
@@ -161,7 +149,8 @@ func (this *ConnectingPool) run() {
 	}
 }
 
-func GetConnectingPool() *ConnectingPool  {
+// 将连接池开放给其他包访问
+func GetConnectingPool() *ConnectingPool {
 	return connectingPool
 }
 
@@ -179,5 +168,29 @@ type OnlineUser struct {
 	UserInfo   *structs.UserInfo
 }
 
+// 检查用户登陆
+func checkLogin(ws *websocket.Conn) (structs.UserInfo, error) {
+	gosessionid, err := ws.Request().Cookie("gosessionid")
+	if err != nil {
+		needLogin(ws)
+		return structs.UserInfo{}, errors.New(http.StatusText(http.StatusUnauthorized))
+	}
+	sess, _ := session.GlobalSessions.GetSessionStore(gosessionid.Value)
+	isLogin := sess.Get("isLogin")
+	id := sess.Get("id")
+	if isLogin == nil || id == nil || !isLogin.(bool) {
+		needLogin(ws)
+		return structs.UserInfo{}, errors.New(http.StatusText(http.StatusUnauthorized))
+	}
 
+	user, err := models.IdToUser(id.(string))
+	return user, err
+}
 
+// 返回需要登陆
+func needLogin(ws *websocket.Conn) {
+	json := make(map[string]interface{})
+	json["code"] = http.StatusUnauthorized
+	json["msg"] = http.StatusText(http.StatusUnauthorized)
+	websocket.JSON.Send(ws, json)
+}
