@@ -8,12 +8,16 @@ import (
 var MgoSession *mgo.Session = &mgo.Session{}
 
 func init()  {
-	MgoSession, err := mgo.Dial("")
+	var err error
+	MgoSession, err = mgo.Dial("")
 	if err != nil {
 		log.Println("MongoDB：%v\n", err)
 	} else if err = MgoSession.Ping(); err != nil {
 		log.Println("MongoDB：%v\n", err)
 	}
+	MgoSession.SetMode(mgo.Monotonic, true)
+	//default is 4096
+	MgoSession.SetPoolLimit(300)
 }
 
 func GetSession() *mgo.Session  {
@@ -24,4 +28,8 @@ func GetSession() *mgo.Session  {
 		log.Println("MongoDB：%v\n", err)
 	}
 	return MgoSession
+}
+
+func CloneSession() *mgo.Session {
+	return MgoSession.Clone()
 }

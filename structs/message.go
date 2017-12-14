@@ -30,6 +30,23 @@ type MessageContent struct {
 	Data string
 }
 
+func MessageNotice(uid string, target string, msg string) *Message {
+	m := Message{
+		Module:  "PUSH",
+		Version: MSG_VERSION,
+		UUID:    00,
+		UID:     uid,
+		Type:    "SYSTEM",
+		Target:  target,
+		Time:    int(time.Now().Unix()),
+		Content: MessageContent{
+			Type: "text_mtype",
+			Data: msg,
+		},
+	}
+	return &m
+}
+
 func OnlineNotice(uid string, target string) *Message {
 	m := Message{
 		Module:  "PUSH",

@@ -8,9 +8,15 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const DB_NAME  = "chat"
+
 // 通过id查询用户
 func IdToUser(id string) (result structs.UserInfo, err error) {
-	c := db.GetSession().DB("test").C("user")
+
+	mgoSess := db.CloneSession()//调用这个获得session
+	defer mgoSess.Close()  //一定要记得释放
+
+	c := mgoSess.DB(DB_NAME).C("user")
 	result = structs.UserInfo{}
 	where := bson.M{"_id": bson.ObjectIdHex(id)}
 	err = c.Find(where).One(&result)
@@ -22,7 +28,11 @@ func IdToUser(id string) (result structs.UserInfo, err error) {
 
 // 通过username查询用户
 func UsernameToUser(username string) (result structs.UserInfo, err error) {
-	c := db.GetSession().DB("test").C("user")
+
+	mgoSess := db.CloneSession()//调用这个获得session
+	defer mgoSess.Close()  //一定要记得释放
+
+	c := mgoSess.DB(DB_NAME).C("user")
 	result = structs.UserInfo{}
 	where := bson.M{"username": username}
 	err = c.Find(where).One(&result)
@@ -30,6 +40,23 @@ func UsernameToUser(username string) (result structs.UserInfo, err error) {
 		return
 	}
 	return
+}
+
+func AddUser(u,p,e string)  {
+	mgoSess := db.CloneSession()//调用这个获得session
+	defer mgoSess.Close()  //一定要记得释放
+
+	c := mgoSess.DB(DB_NAME).C("user")
+	err := c.Insert(structs.UserInfo{
+		ID:bson.NewObjectId(),
+		UserName:u,
+		Passwd:p,
+		Email:e,
+	})
+
+	if err != nil {
+		panic(err)
+	}
 }
 
 func GetUser() {
@@ -40,7 +67,7 @@ func GetUser() {
 	defer session.Close()
 
 	session.SetMode(mgo.Monotonic, true)
-	c := session.DB("test").C("user")
+	c := session.DB(DB_NAME).C("user")
 	c.EnsureIndex(mgo.Index{
 		Key:    []string{"username"},
 		Unique: true,
@@ -56,7 +83,7 @@ func GetUser() {
 }
 
 func VerifyLogin(username string, passwd string) bool {
-	c := db.GetSession().DB("test").C("user")
+	c := db.GetSession().DB(DB_NAME).C("user")
 	result := structs.UserInfo{}
 	where := bson.M{"username": username, "passwd": passwd}
 	err := c.Find(where).One(&result)

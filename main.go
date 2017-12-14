@@ -21,9 +21,9 @@ func main() {
 	http.HandleFunc("/api/getOnlineUserList", api.GetOnlineUserList)
 	http.HandleFunc("/api/json", api.HelloJson)
 	http.HandleFunc("/api/login", api.Login)
+	http.HandleFunc("/api/register", api.Register)
 
 	http.HandleFunc("/public/", web.PublicHandler)
-
 
 	//models.GetUser()
 	//utils.Browser("http://127.0.0.1:8080");

@@ -94,6 +94,12 @@ func (this *OnlineUser) PullFromClient() {
 		}
 
 		//收到客户端消息content
+		for _, t := range connectingPool.Users {
+			if t.UserInfo.ID != this.UserInfo.ID {
+				m := structs.MessageNotice(this.UserInfo.ID.Hex(), t.UserInfo.ID.Hex(), content)
+				Send(t.UserInfo.ID.Hex(), m)
+			}
+		}
 	}
 }
 

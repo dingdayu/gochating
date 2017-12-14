@@ -21,6 +21,27 @@
         </td>
     </tr>
 </table>
+
+注册：
+<table>
+    <tr>
+        <td>用户名：</td>
+        <td><input name="username" type="text" /></td>
+    </tr>
+    <tr>
+        <td>密码：</td>
+        <td><input name="passwd" type="password" /></td>
+    </tr>
+    <tr>
+        <td>邮箱：</td>
+        <td><input name="email" type="text" /></td>
+    </tr>
+    <tr>
+        <td>
+            <input type="button" onclick="reg()" value="登陆"/>
+        </td>
+    </tr>
+</table>
 <script type="text/javascript">
     function subimt() {
         var data = {
@@ -30,6 +51,23 @@
         $.post("/api/login", data, function (ret) {
             if(ret.code == 200) {
                 location.href = '/'
+            } else {
+                alert(ret.msg)
+            }
+            console.log(ret)
+        },'json')
+    }
+    function ret() {
+        var data = {
+            username: $("[name='username']").val(),
+            passwd: $("[name='passwd']").val(),
+            email: $("[name='email']").val()
+        };
+        $.post("/api/register", data, function (ret) {
+            if(ret.code == 200) {
+                location.href = '/'
+            } else {
+                alert(ret.msg)
             }
             console.log(ret)
         },'json')
