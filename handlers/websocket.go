@@ -75,10 +75,17 @@ func (onlineUser *OnlineUser) UserOnlineNotice() {
 // 有用户退出，将新的用户列表发送给所有人
 func (this *OnlineUser) killUserResource() {
 	this.Connection.Close()
-	delete(connectingPool.Users, string(this.UserInfo.ID))
+	id := this.UserInfo.ID
+	delete(connectingPool.Users, this.UserInfo.ID.Hex())
 	close(this.Send)
 
 	// 用户下线通知，同上面行数逻辑类似
+	for _, t := range connectingPool.Users {
+		if t.UserInfo.ID != id {
+			m := structs.OnlineNotice("0", t.UserInfo.ID.Hex())
+			Send(t.UserInfo.ID.Hex(), m)
+		}
+	}
 }
 
 // 等待客户端消息
