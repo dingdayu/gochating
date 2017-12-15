@@ -48,6 +48,7 @@ func Login(w http.ResponseWriter, r *http.Request)  {
 	if userInfo.Passwd == passwd {
 		sess.Set("isLogin", true)
 		sess.Set("id", userInfo.ID.Hex())
+		sess.Set("name", username)
 		ret["code"] = 200
 		ret["msg"] = "success"
 		utils.ReturnJson(ret, w)

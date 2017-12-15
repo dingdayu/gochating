@@ -72,6 +72,14 @@
             console.log(ret)
         },'json')
     }
+
+    $('input[name=passwd]').bind('keypress',function(event){
+        if(event.which === 13)
+        {
+            subimt()
+        }
+
+    });
 </script>
 </body>
 </html>

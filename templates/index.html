@@ -6,8 +6,16 @@
     <script src="/public/js/jquery-3.1.1.min.js"></script>
 </head>
 <body>
+
+<textarea rows="20" cols="200" readonly>
+
+</textarea>
+
+<br>
+
 hello {{.name}}!
-<input name="username" data-node="dingdayu" />
+<input name="username" data-node="{{.name}}" />
+<input type="button" onclick="sendMsg()" value="发送">
 </body>
 <script type="text/javascript">
     if (window["WebSocket"]) {
@@ -24,7 +32,9 @@ hello {{.name}}!
             switch(data.Content.Type) {
                 case "text_mtype":
                     //addMessage(data.TextMessage);
+                    var msg = JSON.parse(data.Content.Data);
                     console.log("收到消息：" + data.Content.Data);
+                    $('textarea').val($('textarea').val() + msg.Name + ': ' + msg.Data + "\r\n");
                     break;
                 case "OnlineNotice":
                     //updateUsers(data.UserStatus)
@@ -35,11 +45,12 @@ hello {{.name}}!
         };
 
         conn.onerror = function() {
-            //location.reload()
+            location.reload()
             alert("连接异常")
         };
 
         conn.onclose = function() {
+            //location.reload()
             alert("连接已断开")
         };
     } else {
@@ -49,12 +60,18 @@ hello {{.name}}!
     $('input[name=username]').bind('keypress',function(event){
         if(event.which === 13)
         {
-            var msg = $('input[name=username]').val();
-            conn.send(JSON.stringify({Type: "text_mtype", Data: msg}));
-            console.log("发送消息：" + msg)
-            $('input[name=username]').val("")
+            sendMsg()
         }
 
     });
+
+    function sendMsg() {
+        var name = $('input[name=username]').data('node');
+        var msg = $('input[name=username]').val();
+        conn.send(JSON.stringify({Type: "text_mtype", Data: msg, Name: name}));
+        console.log("发送消息：" + msg)
+        $('textarea').val($('textarea').val() + name + ': ' + msg + "\r\n");
+        $('input[name=username]').val("")
+    }
 </script>
 </html>

@@ -76,7 +76,9 @@ func LoadHtml(w http.ResponseWriter, path string, locals map[string]interface{})
 func Hello(w http.ResponseWriter, r *http.Request) {
 	// 将字符串通过回写指针返回给浏览器
 	locals := make(map[string]interface{})
-	locals["name"] = "dingdayu"
+
+	sess, _ := session.GlobalSessions.SessionStart(w, r)
+	locals["name"] = sess.Get("name")
 	locals["WebSocketHost"] = "127.0.0.1:8080"
 	LoadHtml(w,  TEMPLATE_DIR + "/index.html", locals)
 }
