@@ -31,10 +31,7 @@ func Login(w http.ResponseWriter, r *http.Request)  {
 
 	visitLogin := sess.Get("visitLogin")
 	if visitLogin == nil || !visitLogin.(bool) {
-		ret["code"] = 304
-		ret["msg"] = "login error!"
-		utils.ReturnJson(ret, w)
-		return
+		session.GlobalSessions.SessionRegenerateID(w, r)
 	}
 
 	userInfo, err := models.UsernameToUser(username)

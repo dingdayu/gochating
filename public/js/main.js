@@ -30,7 +30,7 @@ $(function() {
     function addParticipantsMessage (data) {
         var message = '';
         if (data.numUsers === 1) {
-            message += "there's 1 participant";
+            message += "新成员加入";
         } else {
             message += "there are " + data.numUsers + " participants";
         }
@@ -239,7 +239,7 @@ $(function() {
         connected = true;
         // Display the welcome message
         var message = data.username + " 欢迎来到聊天室.";
-        log(message, {prepend: true});
+        log(message, {prepend: true, fade: true});
         addParticipantsMessage(data);
     }
 
@@ -259,7 +259,7 @@ $(function() {
                 }
                 switch(data.Content.Type) {
                     case "OnlineNotice":
-                        newUser({numUsers: 1, })
+                        newUser({numUsers: 1, username:data.Content.Data})
                         break;
                     case "OfflineNotice":
                         // 用户下线
