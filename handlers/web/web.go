@@ -11,6 +11,7 @@ import (
 )
 
 const TEMPLATE_DIR  = "./templates"
+const DEV  = true
 
 var templates map[string]*template.Template
 
@@ -62,15 +63,25 @@ func isExists(path string) bool {
 
 // 模板加载
 func LoadHtml(w http.ResponseWriter, path string, locals map[string]interface{}) {
-	if templates[path] == nil {
-		http.Error(w, path + " not find!", http.StatusInternalServerError)
-		return
+	if DEV {
+		t, err := template.ParseFiles(path)
+		if err != nil {
+			// 抛出错误，并向上层层抛出错误
+			panic(err)
+		}
+		t.Execute(w, locals)
+	} else {
+		if templates[path] == nil {
+			http.Error(w, path + " not find!", http.StatusInternalServerError)
+			return
+		}
+		err := templates[path].Execute(w, locals)
+		if err != nil {
+			// 抛出错误，并向上层层抛出错误
+			panic(err)
+		}
 	}
-	err := templates[path].Execute(w, locals)
-	if err != nil {
-		// 抛出错误，并向上层层抛出错误
-		panic(err)
-	}
+
 }
 
 func Hello(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +91,7 @@ func Hello(w http.ResponseWriter, r *http.Request) {
 	sess, _ := session.GlobalSessions.SessionStart(w, r)
 	locals["name"] = sess.Get("name")
 	locals["WebSocketHost"] = "127.0.0.1:8080"
-	LoadHtml(w,  TEMPLATE_DIR + "/index.html", locals)
+	LoadHtml(w,  TEMPLATE_DIR + "/index2.html", locals)
 }
 
 func Login(w http.ResponseWriter, r *http.Request)  {

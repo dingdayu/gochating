@@ -40,14 +40,15 @@ func MessageNotice(uid string, target string, msg string) *Message {
 		Target:  target,
 		Time:    int(time.Now().Unix()),
 		Content: MessageContent{
-			Type: "text_mtype",
+			Type: "platform",
 			Data: msg,
 		},
 	}
 	return &m
 }
 
-func OnlineNotice(uid string, target string) *Message {
+// 上线通知
+func OnlineNotice(uid string, target string, user *UserInfo) *Message {
 	m := Message{
 		Module:  "PUSH",
 		Version: MSG_VERSION,
@@ -58,13 +59,14 @@ func OnlineNotice(uid string, target string) *Message {
 		Time:    int(time.Now().Unix()),
 		Content: MessageContent{
 			Type: "OnlineNotice",
-			Data: "",
+			Data: user.UserName,
 		},
 	}
 	return &m
 }
 
-func OfflineNotice(uid string, target string) *Message {
+// 下线通知
+func OfflineNotice(uid string, target string, user *UserInfo) *Message {
 	m := Message{
 		Module:  "PUSH",
 		Version: MSG_VERSION,
@@ -75,7 +77,7 @@ func OfflineNotice(uid string, target string) *Message {
 		Time:    int(time.Now().Unix()),
 		Content: MessageContent{
 			Type: "OfflineNotice",
-			Data: "",
+			Data: user.UserName,
 		},
 	}
 	return &m

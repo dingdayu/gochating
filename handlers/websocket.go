@@ -65,7 +65,7 @@ func (onlineUser *OnlineUser) UserOnlineNotice() {
 	//}
 	for _, t := range connectingPool.Users {
 		if t.UserInfo.ID != onlineUser.UserInfo.ID {
-			m := structs.OnlineNotice(onlineUser.UserInfo.ID.Hex(), t.UserInfo.ID.Hex())
+			m := structs.OnlineNotice(onlineUser.UserInfo.ID.Hex(), t.UserInfo.ID.Hex(), onlineUser.UserInfo)
 			Send(t.UserInfo.ID.Hex(), m)
 		}
 	}
@@ -73,16 +73,16 @@ func (onlineUser *OnlineUser) UserOnlineNotice() {
 }
 
 // 有用户退出，将新的用户列表发送给所有人
-func (this *OnlineUser) killUserResource() {
-	this.Connection.Close()
-	id := this.UserInfo.ID
-	delete(connectingPool.Users, this.UserInfo.ID.Hex())
-	close(this.Send)
+func (onlineUser *OnlineUser) killUserResource() {
+	onlineUser.Connection.Close()
+	id := onlineUser.UserInfo.ID
+	delete(connectingPool.Users, onlineUser.UserInfo.ID.Hex())
+	close(onlineUser.Send)
 
 	// 用户下线通知，同上面行数逻辑类似
 	for _, t := range connectingPool.Users {
 		if t.UserInfo.ID != id {
-			m := structs.OnlineNotice("0", t.UserInfo.ID.Hex())
+			m := structs.OfflineNotice("0", t.UserInfo.ID.Hex(), onlineUser.UserInfo)
 			Send(t.UserInfo.ID.Hex(), m)
 		}
 	}
